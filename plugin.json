@@ -1,0 +1,14 @@
+{
+  "id": "df-mermaid",
+  "name": "Mermaid Diagrams",
+  "version": "0.1.0",
+  "description": "Preview Mermaid diagrams from the editor in a dedicated window with pan and zoom.",
+  "main": "index.js",
+  "contributes": {
+    "pluginToolbar": true
+  },
+  "permissions": [
+    "editor.read",
+    "ui.pluginToolbar"
+  ]
+}

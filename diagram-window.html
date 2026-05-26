@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mermaid — Draftflow</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #1a1814;
+      color: #e8e3dc;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 14px;
+      height: 44px;
+      background: #211f1c;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      flex-shrink: 0;
+    }
+
+    .logo {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #5a5450;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .sep {
+      width: 1px;
+      height: 16px;
+      background: rgba(255,255,255,0.08);
+      flex-shrink: 0;
+    }
+
+    /* tab strip */
+    .tabs {
+      display: flex;
+      gap: 0;
+      flex: 1;
+      overflow: hidden;
+      align-items: stretch;
+    }
+
+    .tab {
+      padding: 0 14px;
+      height: 44px;
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.72rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      color: #5a5450;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: color 0.1s, border-color 0.1s;
+      user-select: none;
+      -webkit-user-select: none;
+      background: transparent;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+    }
+
+    .tab:hover { color: #9a9490; }
+    .tab.active { color: #e8e3dc; border-bottom-color: #c8a060; }
+
+    /* controls */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .zoom-strip {
+      display: flex;
+      align-items: center;
+      gap: 1px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 5px;
+      padding: 2px;
+    }
+
+    .zoom-btn {
+      background: transparent;
+      border: none;
+      color: #7a7470;
+      width: 24px;
+      height: 22px;
+      border-radius: 3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+      line-height: 1;
+      transition: background 0.1s, color 0.1s;
+    }
+
+    .zoom-btn:hover { background: rgba(255,255,255,0.07); color: #e8e3dc; }
+
+    .zoom-level {
+      font-size: 0.65rem;
+      color: #5a5450;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      min-width: 34px;
+      text-align: center;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .divider {
+      width: 1px;
+      height: 14px;
+      background: rgba(255,255,255,0.07);
+      margin: 0 1px;
+    }
+
+    .copy-btn {
+      padding: 4px 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 5px;
+      color: #7a7470;
+      font-size: 0.68rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.1s, color 0.1s, border-color 0.1s;
+    }
+
+    .copy-btn:hover { background: rgba(255,255,255,0.09); color: #e8e3dc; }
+
+    .copy-btn.ok {
+      color: #70b870;
+      border-color: rgba(112,184,112,0.25);
+    }
+
+    /* diagram canvas */
+    .canvas {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      cursor: grab;
+    }
+
+    .canvas.dragging { cursor: grabbing; }
+
+    #pan-zoom {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      transform-origin: 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #diagram-host {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 100%;
+      min-height: 100%;
+    }
+
+    /* let mermaid SVGs scale naturally */
+    #diagram-host svg {
+      max-width: 80vw;
+      max-height: 72vh;
+    }
+
+    .error-box {
+      background: rgba(180,50,50,0.12);
+      border: 1px solid rgba(180,50,50,0.28);
+      border-radius: 6px;
+      padding: 16px 20px;
+      color: #d07070;
+      font-size: 0.78rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      white-space: pre-wrap;
+      max-width: 560px;
+      line-height: 1.6;
+    }
+
+    .empty {
+      color: #3a3630;
+      font-size: 0.8rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <span class="logo">⬡ mermaid</span>
+    <div class="sep"></div>
+    <div class="tabs" id="tabs"></div>
+    <div class="controls">
+      <div class="zoom-strip">
+        <button class="zoom-btn" id="zoomOut" title="Zoom out (-)">−</button>
+        <span class="zoom-level" id="zoomLevel">100%</span>
+        <div class="divider"></div>
+        <button class="zoom-btn" id="zoomReset" title="Reset (0)">⊙</button>
+        <div class="divider"></div>
+        <button class="zoom-btn" id="zoomIn" title="Zoom in (+)">+</button>
+      </div>
+      <button class="copy-btn" id="copyBtn">copy source</button>
+    </div>
+  </div>
+
+  <div class="canvas" id="canvas">
+    <div id="pan-zoom">
+      <div id="diagram-host">
+        <div class="empty">Waiting for diagram…</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      themeVariables: {
+        fontSize: '14px',
+        background:          '#1a1814',
+        mainBkg:             '#2a2724',
+        primaryColor:        '#2a2724',
+        primaryTextColor:    '#e8e3dc',
+        primaryBorderColor:  'rgba(255,255,255,0.14)',
+        lineColor:           '#8a8278',
+        secondaryColor:      '#211f1c',
+        tertiaryColor:       '#211f1c',
+        edgeLabelBackground: '#1a1814',
+        clusterBkg:          '#211f1c',
+        nodeBorder:          'rgba(255,255,255,0.14)',
+        titleColor:          '#e8e3dc',
+      }
+    })
+
+    // ── state ─────────────────────────────────────────────────────────────────
+    let _sources  = []
+    let _active   = 0
+    let _renderId = 0
+
+    // ── pan/zoom ──────────────────────────────────────────────────────────────
+    let scale = 1, panX = 0, panY = 0
+    const MIN_SCALE = 0.1, MAX_SCALE = 8, STEP = 0.15
+
+    const panZoom    = document.getElementById('pan-zoom')
+    const canvas     = document.getElementById('canvas')
+    const zoomLevelEl = document.getElementById('zoomLevel')
+
+    function applyTransform(animate) {
+      panZoom.style.transition = animate ? 'transform 0.15s ease' : 'none'
+      panZoom.style.transform  = `translate(${panX}px,${panY}px) scale(${scale})`
+      zoomLevelEl.textContent  = Math.round(scale * 100) + '%'
+    }
+
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)) }
+
+    function zoomAt(cx, cy, factor) {
+      const ns = clamp(scale * factor, MIN_SCALE, MAX_SCALE)
+      const r  = ns / scale
+      panX = cx - r * (cx - panX)
+      panY = cy - r * (cy - panY)
+      scale = ns
+      applyTransform(false)
+    }
+
+    function resetZoom() { scale = 1; panX = 0; panY = 0; applyTransform(true) }
+
+    document.getElementById('zoomIn').onclick = () => {
+      const r = canvas.getBoundingClientRect()
+      zoomAt(r.width / 2, r.height / 2, 1 + STEP)
+    }
+    document.getElementById('zoomOut').onclick = () => {
+      const r = canvas.getBoundingClientRect()
+      zoomAt(r.width / 2, r.height / 2, 1 - STEP)
+    }
+    document.getElementById('zoomReset').onclick = resetZoom
+
+    document.addEventListener('keydown', e => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+      const r = canvas.getBoundingClientRect()
+      if (e.key === '+' || e.key === '=') { e.preventDefault(); zoomAt(r.width/2, r.height/2, 1 + STEP) }
+      if (e.key === '-')                   { e.preventDefault(); zoomAt(r.width/2, r.height/2, 1 - STEP) }
+      if (e.key === '0')                   { e.preventDefault(); resetZoom() }
+      if (e.key === 'ArrowLeft')           { e.preventDefault(); _switchTab(_active - 1) }
+      if (e.key === 'ArrowRight')          { e.preventDefault(); _switchTab(_active + 1) }
+    })
+
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault()
+      const r = canvas.getBoundingClientRect()
+      zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1 + STEP : 1 - STEP)
+    }, { passive: false })
+
+    let dragging = false, dragSX, dragSY
+    canvas.addEventListener('mousedown', e => {
+      if (e.button !== 0) return
+      dragging = true; dragSX = e.clientX - panX; dragSY = e.clientY - panY
+      canvas.classList.add('dragging')
+    })
+    document.addEventListener('mousemove', e => {
+      if (!dragging) return
+      panX = e.clientX - dragSX; panY = e.clientY - dragSY
+      applyTransform(false)
+    })
+    document.addEventListener('mouseup', () => { dragging = false; canvas.classList.remove('dragging') })
+
+    // ── tabs ──────────────────────────────────────────────────────────────────
+    function _label(src, idx) {
+      const first = src.split('\n')[0].trim()
+      const m = first.match(/^(flowchart|graph|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|journey|gitGraph|mindmap|timeline|quadrantChart|xychart)/i)
+      return m ? m[1] : `diagram ${idx + 1}`
+    }
+
+    function _switchTab(idx) {
+      if (!_sources.length) return
+      idx = Math.max(0, Math.min(_sources.length - 1, idx))
+      if (idx === _active) return
+      _active = idx
+      _renderActive()
+      _updateTabs()
+    }
+
+    function _updateTabs() {
+      const tabsEl = document.getElementById('tabs')
+      tabsEl.innerHTML = ''
+      if (_sources.length < 2) return
+      _sources.forEach((src, i) => {
+        const btn = document.createElement('button')
+        btn.className = 'tab' + (i === _active ? ' active' : '')
+        btn.textContent = _label(src, i)
+        btn.onclick = () => _switchTab(i)
+        tabsEl.appendChild(btn)
+      })
+    }
+
+    // ── render ────────────────────────────────────────────────────────────────
+    async function _renderActive() {
+      const host = document.getElementById('diagram-host')
+      host.innerHTML = ''
+      resetZoom()
+
+      if (!_sources.length) {
+        host.innerHTML = '<div class="empty">No diagram loaded</div>'
+        return
+      }
+
+      const src = _sources[_active]
+      const id  = 'mermaid-svg-' + (++_renderId)
+      try {
+        const { svg } = await mermaid.render(id, src)
+        host.innerHTML = svg
+
+        const svgEl = host.querySelector('svg')
+        if (svgEl) {
+          if (!svgEl.getAttribute('viewBox')) {
+            const w = parseFloat(svgEl.getAttribute('width'))
+            const h = parseFloat(svgEl.getAttribute('height'))
+            if (w && h) svgEl.setAttribute('viewBox', `0 0 ${w} ${h}`)
+          }
+          svgEl.removeAttribute('width')
+          svgEl.removeAttribute('height')
+          svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet')
+        }
+      } catch (err) {
+        host.innerHTML = `<div class="error-box">${String(err.message).replace(/</g,'&lt;')}</div>`
+      }
+    }
+
+    // ── copy ──────────────────────────────────────────────────────────────────
+    document.getElementById('copyBtn').onclick = () => {
+      if (!_sources.length) return
+      const text = '```mermaid\n' + _sources[_active] + '\n```'
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copyBtn')
+        const orig = btn.textContent
+        btn.textContent = 'copied!'
+        btn.classList.add('ok')
+        setTimeout(() => { btn.textContent = orig; btn.classList.remove('ok') }, 1800)
+      })
+    }
+
+    // ── public API called by plugin via executeJavaScript ─────────────────────
+    window.__updateDiagrams = function(sources) {
+      _sources = Array.isArray(sources) ? sources : []
+      _active  = 0
+      _updateTabs()
+      _renderActive()
+    }
+  </script>
+</body>
+</html>
