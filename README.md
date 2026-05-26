@@ -17,6 +17,18 @@ A [Draftflow](https://draftflow.app) plugin that renders Mermaid diagrams from y
 Any diagram type supported by [Mermaid v10](https://mermaid.js.org/intro/):
 flowchart, sequenceDiagram, classDiagram, stateDiagram, erDiagram, gantt, pie, journey, gitGraph, mindmap, timeline, and more.
 
+## Works great with claude-diagram
+
+This plugin pairs naturally with [claude-diagram](https://github.com/sameera207/claude-diagram), a Claude Code plugin that **auto-generates Mermaid diagrams from plans and context** directly in your terminal workflow.
+
+Typical combined workflow:
+
+1. Use `claude-diagram` in Claude Code to generate a diagram for a plan, data model, or flow — it renders a live preview in your browser and copies the Mermaid source.
+2. Paste the fenced ` ```mermaid ` block into your Draftflow document.
+3. Click the **⬡ diagram** button in Draftflow to get a persistent, pannable/zoomable preview alongside your writing.
+
+In short: `claude-diagram` generates diagrams while you think; this plugin keeps them visible while you write.
+
 ## Installation
 
 ### Requirements
